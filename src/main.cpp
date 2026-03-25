@@ -54,8 +54,8 @@ Options:
     -f, --filter <key> [values...]   Filter games
     -d, --descending     Descending sort
     -r, --refresh        Force refresh cache
-    debug                Output debug info
-    --help               Show this help message
+	-h, --help           Show this help message
+	debug                Output debug info
 )" << std::endl;
     return 0;
 }
