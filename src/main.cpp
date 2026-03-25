@@ -40,6 +40,25 @@ bool needGenres(const Command &cmd)
  */
 
 int main(int argc, char* argv[]) {
+	if (argc > 1 && std::string(argv[1]) == "--help" | std::string(argv[i]) == "-h" {
+    std::cout << R"(
+Better Steam Library CLI Tool
+
+Usage:
+    better-steamlib.exe [OPTIONS]
+
+Options:
+    -l, --list           List all games
+    -s, --sort <key>     Sort games by key
+    -g, --group <key>    Group games by key
+    -f, --filter <key> [values...]   Filter games
+    -d, --descending     Descending sort
+    -r, --refresh        Force refresh cache
+	-h, --help           Show this help message
+	debug                Output debug info
+)" << std::endl;
+    return 0;
+}
     // Enable UTF-8 output in the Windows console
     SetConsoleOutputCP(CP_UTF8);
 
