@@ -25,7 +25,7 @@ A command-line tool to list, group, sort, and filter your installed Steam games.
 | `-d, --descending`               | Sort in descending order (default is ascending).                                                                                                                |
 | `-r, --refresh`                  | Force rebuild of cached game data from library folders.                                                                                                         |
 | `debug`                          | Output debug information about loaded games, cache status, and CLI options.                                                                                     |
-| `--help`                         | Show this help message.                                                                                                                                         |
+| `-h, --help`                     | Show this help message.                                                                                                                                         |
 
 Examples
 ```
