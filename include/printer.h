@@ -7,6 +7,21 @@
 #include "game.h"
 #include "cli_types.h"
 
+struct Row {
+    std::string name;   // first column
+    std::string genres; // second column
+    // std::string size;   // third column (not implemented)
+    std::string path;   // fourth column
+};
+
+struct Widths {
+    int max_name_width = 0;
+    int max_genre_width = 0;
+    int max_path_width = 0;
+};
+
+std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<Filter> &Filters);
+
 /**
  * @brief Groups games based on a specified key.
  *
@@ -22,8 +37,6 @@
 std::unordered_map<std::string, std::vector<Game>>
 groupGames(const std::vector<Game> &games, GroupKey key);
 
-std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<Filter> &Filters);
-
 /**
  * @brief Sorts a list of games in-place.
  *
@@ -34,7 +47,25 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
  * @param key The sorting criterion.
  * @param descending If true, sorts in descending order; otherwise ascending.
  */
-void sortGames(std::vector<Game> &games, SortKey key, bool descending = false);
+void sortGames(const std::vector<Game> &games, SortKey key, bool descending = false);
+
+std::vector<Row> buildRows(const std::vector<Game> &games);
+
+Widths computeColumnWidths(const std::vector<std::string> &rows);
+
+std::vector<std::string> formatRows(std::vector<std::string> &rows, Widths &width);
+
+void printGroupHeader(const std::string &group_name, std::size_t game_count);
+
+std::string shorten(const std::string toShorten, int &width);
+
+void printRow(const Row &row, Widths &width);
+
+void printRows(std::vector<Row> formatted_str);
+
+std::string formatGenres(std::unordered_set<std::string> &genres);
+
+
 
 /**
  * @brief Prints a list of games with optional grouping and sorting.

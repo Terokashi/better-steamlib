@@ -40,7 +40,7 @@ bool needGenres(const Command &cmd)
  */
 
 int main(int argc, char* argv[]) {
-	if (argc > 1 && std::string(argv[1]) == "--help" | std::string(argv[i]) == "-h" {
+    if (argc > 1 && std::string(argv[1]) == "--help" | std::string(argv[1]) == "-h") {
     std::cout << R"(
 Better Steam Library CLI Tool
 
@@ -54,8 +54,8 @@ Options:
     -f, --filter <key> [values...]   Filter games
     -d, --descending     Descending sort
     -r, --refresh        Force refresh cache
-	-h, --help           Show this help message
-	debug                Output debug info
+    debug                Output debug info
+    --help               Show this help message
 )" << std::endl;
     return 0;
 }

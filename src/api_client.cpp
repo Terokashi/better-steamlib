@@ -76,6 +76,9 @@ std::unordered_set<std::string> fetchGenres(int appid)
     std::string app_path = "cache/apps/" + std::to_string(appid) + ".json";
     std::filesystem::create_directories(std::filesystem::path(app_path).parent_path());
 
+    std::mutex cout_mutex;
+    std::ostringstream oss;
+
     if (std::filesystem::exists(app_path))
     {
         json j;
@@ -85,7 +88,11 @@ std::unordered_set<std::string> fetchGenres(int appid)
                 file >> j;
                 std::unordered_set<std::string> genres;
                 from_json(j, genres);
-                std::cout << "[CACHE HIT] " << std::to_string(appid) << std::endl;
+                {
+                    oss << "[CACHE HIT] " << appid << std::endl;
+                    std::lock_guard<std::mutex> lock(cout_mutex);
+                    std::cout << oss.str();
+                }
                 return genres;
             }
             catch (const std::exception &e) {
@@ -93,17 +100,24 @@ std::unordered_set<std::string> fetchGenres(int appid)
             }
         }
     }
-
-    std::cout << "[API FETCH] " << std::to_string(appid) << std::endl;
+    {
+        oss << "[API FETCH] " << std::to_string(appid) << std::endl;
+        std::lock_guard<std::mutex> lock(cout_mutex);
+        std::cout << oss.str();
+    }
     std::string url =
         "https://store.steampowered.com/api/appdetails?appids=" +
-        std::to_string(appid);
+        std::to_string(appid) + "&l=en";
 
     std::unordered_set<std::string> genres;
     // Call Steam API
     std::string response = httpGet(url);
     if (response.empty()) {
-        std::cout << "[API FAIL]" << std::endl;
+        {
+            oss << "[API FETCH] " << std::to_string(appid) << std::endl;
+            std::lock_guard<std::mutex> lock(cout_mutex);
+            std::cout << "[API FAIL]" << std::endl;
+        }
         return genres;
     }
 
@@ -123,10 +137,18 @@ std::unordered_set<std::string> fetchGenres(int appid)
             }
         }
         else {
-            std::cout << "[CACHE WRITE EMPTY] " << std::to_string(appid) << std::endl;
+            {
+                oss << "[CACHE WRITE EMPTY] " << std::to_string(appid) << std::endl;
+                std::lock_guard<std::mutex> lock(cout_mutex);
+                std::cout << oss.str();
+            }
         }
     } catch (const std::exception &e) {
-        std::cout << "Something went wrong! " << e.what() << std::endl;
+        {
+            oss << "Something went wrong! " << e.what() << std::endl;
+            std::lock_guard<std::mutex> lock(cout_mutex);
+            std::cout << oss.str();
+        }
     }
 
     json j_genres;
@@ -136,7 +158,14 @@ std::unordered_set<std::string> fetchGenres(int appid)
         to_json(j_genres, genres);
         file << j_genres.dump(4);
     }
-    else std::cout << "[CACHE FILE ERROR]" << std::endl;
+    else
+    {
+        {
+            oss << "[CACHE FILE ERROR]" << std::endl;
+            std::lock_guard<std::mutex> lock(cout_mutex);
+            std::cout << oss.str();
+        }
+    }
     return genres;
 }
 
@@ -169,12 +198,12 @@ void enrichGamesParallel(std::vector<Game> &games, size_t max_concurrent)
         try {
             future.push_back(std::async(std::launch::async, enrichGameWithGenres, std::ref(games[i])));
         }
-        catch (std::exception e) {
+        catch (const std::exception e) {
             std::cout << "Something failed! " << e.what() << std::endl;
             std::cout << "Happened to game: [" << games[i].name << "] [" << games[i].appid << "]" << std::endl;
         }
 
-        if (future.size() > max_concurrent)
+        if (future.size() >= max_concurrent)
         {
             for(auto &f : future) f.get();
             future.clear();
