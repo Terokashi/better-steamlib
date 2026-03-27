@@ -28,12 +28,11 @@ set(HEADERS
     include/cli_parser.h
     include/cli_types.h
     include/api_client.h
+    include/style.h
 )
 
 # --- Executable ---
-add_executable(better-steamlib ${SOURCES} ${HEADERS}
-
-)
+add_executable(better-steamlib ${SOURCES} ${HEADERS})
 
 # --- Include dirs ---
 target_include_directories(better-steamlib PRIVATE

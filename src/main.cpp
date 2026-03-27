@@ -21,6 +21,27 @@
  * Add offline mode
  */
 
+void enableANSI()
+{
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut == INVALID_HANDLE_VALUE) return;
+
+    DWORD dwMode = 0;
+    if (!GetConsoleMode(hOut, &dwMode)) return;
+
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    SetConsoleMode(hOut, dwMode);
+}
+
+void initConsole()
+{
+#ifdef _WIN32
+    enableANSI();
+    // Enable UTF-8 output in the Windows console
+    SetConsoleOutputCP(CP_UTF8);
+#endif
+}
+
 bool needGenres(const Command &cmd)
 {
     if(cmd.group_key == GroupKey::Genre || cmd.sort_key == SortKey::Genre) return true;
@@ -59,8 +80,7 @@ Options:
 )" << std::endl;
     return 0;
 }
-    // Enable UTF-8 output in the Windows console
-    SetConsoleOutputCP(CP_UTF8);
+    initConsole();
 
     // Parse command-line arguments into a Command object
     Command cmd = parseArgs(argc, argv);

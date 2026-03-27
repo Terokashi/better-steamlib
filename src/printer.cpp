@@ -1,4 +1,5 @@
 #include "printer.h"
+#include "style.h"
 
 #include <iostream>
 #include <iomanip>
@@ -221,7 +222,7 @@ std::vector<Row> buildRows(const std::vector<Game> &games) {
     {
         tmp_row.genres = sanitize(formatGenres(g.genres));
         tmp_row.name = sanitize(g.name);
-        tmp_row.path = sanitize(g.library_path);
+        tmp_row.path = sanitize(g.install_dir);
 
         rows.push_back(tmp_row);
     }
@@ -275,12 +276,25 @@ void printSeparator(Widths &width){
               << std::endl;
 }
 
+std::string padStyle(const std::string &txt, int width, const Style &style)
+{
+    std::string padded_styled_str = txt;
+
+    while(padded_styled_str.length() < width)
+    {
+        padded_styled_str += " ";
+    }
+
+    padded_styled_str = applyStyle(padded_styled_str, style);
+    return padded_styled_str;
+}
+
 void printColumnHeader(Widths &width) {
     std::cout << std::setfill(' ')
               << std::left
-              << std::setw(width.max_name_width + 2) << "Game Name" << " | "
-              << std::setw(width.max_genre_width + 2) << "Game Genres" << " | "
-              << std::setw(width.max_path_width + 2) << "Game Library Path" << " |"
+              << padStyle("Game Name", width.max_name_width + 2, nameStyle) << " | "
+              << padStyle("Game Genres", width.max_genre_width + 2, genreStyle) << " | "
+              << padStyle("Game Install", width.max_path_width + 2, pathStyle) << " | "
               << std::endl;
 }
 
@@ -291,9 +305,9 @@ void printRow(const Row &row, Widths &width) {
 
     std::cout << std::setfill(' ')
               << std::left
-              << std::setw(width.max_name_width + 2) << name << " | "
-              << std::setw(width.max_genre_width + 2) << genre << " | "
-              << std::setw(width.max_path_width + 2) << path << " |"
+              << padStyle(name, width.max_name_width + 2, nameStyle) << " | "
+              << padStyle(genre, width.max_genre_width + 2, genreStyle)  << " | "
+              << padStyle(path, width.max_path_width + 2, pathStyle) << " |"
               << std::endl;
 
 }
@@ -310,21 +324,24 @@ void printRows(std::vector<Row> &rows, Widths &width) {
 
 void printGroupHeader(const std::string &groupName, const GroupKey &group_key , std::size_t game_count) {
     std::string out;
+    int len;
     if(group_key == GroupKey::LibraryPath)
     {
-        out += '(';                 // add opening parenthesis
+        out += "(";                 // add opening parenthesis
         out += groupName[0];        // add first character of groupName
         out += ":\\) Game count: "; // add rest of the text
         out += std::to_string(game_count);
-        std::cout << out << std::endl;
+        len = out.length();
+        std::cout << padStyle(out, len, headerStyle) << std::endl;
         std::cout << std::setfill('=')
-                  << std::setw(out.length()) << "=" << std::endl;
+                  << std::setw(len) << "=" << std::endl;
         return;
     }
-    out += '(' + groupName + ":\\) Game count: " + std::to_string(game_count);
-    std::cout << out << std::endl;
+    out += "(" + groupName + ":\\) Game count: " + std::to_string(game_count);
+    len = out.length();
+    std::cout << padStyle(out, len, headerStyle) << std::endl;
     std::cout << std::setfill('=')
-              << std::setw(out.length()) << "=" << std::endl;
+              << std::setw(len) << "=" << std::endl;
 
     return;
 }
