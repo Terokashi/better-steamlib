@@ -19,7 +19,7 @@ A command-line tool to list, group, sort, and filter your installed Steam games.
 | Option                           | Description                                                                                                                                                     |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `-l, --list`                     | List all games according to sorting, grouping, and filters.                                                                                                     |
-| `-s, --sort <key>`               | Sort games by a key. Available keys: `name`, `genre`, `appid`, `path`, `last_played`.                                                                           |
+| `-s, --sort <key>`               | Sort games by a key. Available keys: `name`, `genre`, `appid`, `path`.                                                                           |
 | `-g, --group <key>`              | Group games by a key. Available keys: `name`, `genre`, `path`.                                                                                                  |
 | `-f, --filter <key> [values...]` | Filter games by key and one or more values. Examples: `--filter genre Action Adventure`, `-f path "C:\SteamLibrary"`. Available keys: `genre`, `path`, `appid`. |
 | `-d, --descending`               | Sort in descending order (default is ascending).                                                                                                                |
