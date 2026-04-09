@@ -19,7 +19,8 @@ void to_json(json& j, const Game &g)
         {"name", g.name},
         {"install_dir", g.install_dir},
         {"library_path", g.library_path},
-        {"manifest_path", g.manifest_path}
+        {"manifest_path", g.manifest_path},
+        {"tags", g.tags}
     };
 }
 
@@ -36,7 +37,10 @@ void from_json(const json &j, Game &g)
     j.at("install_dir").get_to(g.install_dir);
     j.at("library_path").get_to(g.library_path);
     j.at("manifest_path").get_to(g.manifest_path);
+    j.at("tags").get_to(g.tags);
 }
+
+
 
 /**
  * @brief Saves a vector of Game objects to a JSON cache file.
@@ -46,20 +50,21 @@ void from_json(const json &j, Game &g)
  * @param games Vector of Game objects to save.
  * @param path File path to save the cache (e.g., "cache/games.json").
  */
-void saveCache(const std::vector<Game>& games, const std::string& path)
+void GameCache::save(const std::vector<Game>& games)
 {
-    std::filesystem::create_directories(std::filesystem::path(path).parent_path());
+    std::filesystem::create_directories(m_path.parent_path());
 
     json j = games;
 
-    std::ofstream file(path);
+    std::ofstream file(m_path.string());
     if (!file.is_open()) {
-        std::cerr << "Failed to open cache file for writing: " << path << std::endl;
+        std::cerr << "Failed to open cache file for writing: " << m_path << std::endl;
         return;
     }
 
     file << j.dump(4); // Pretty print
 }
+
 
 /**
  * @brief Loads a vector of Game objects from a JSON cache file.
@@ -69,11 +74,11 @@ void saveCache(const std::vector<Game>& games, const std::string& path)
  * @param path Path to the cache file.
  * @return std::vector<Game> Vector of loaded Game objects.
  */
-std::vector<Game> loadCache(const std::string& path)
+std::vector<Game> GameCache::load()
 {
     std::vector<Game> games;
 
-    std::ifstream file(path);
+    std::ifstream file(m_path.string());
     if (!file.is_open()) return games;
 
     json j;

@@ -29,21 +29,21 @@ Command parseArgs(int argc, char* argv[]) {
         };
 
         if (arg == "--list" || arg == "-l") {
-            cmd.action = Action::List;
+            cmd.action = cli::Action::List;
         }
         else if (arg == "--sort" || arg == "-s") {
-            if (hasValue(i)) cmd.sort_key = parseSortKey(argv[++i]);
+            if (hasValue(i)) cmd.sort_key = cli::parseSortKey(argv[++i]);
         }
         else if (arg == "--group" || arg == "-g") {
-            if (hasValue(i)) cmd.group_key = parseGroupKey(argv[++i]);
+            if (hasValue(i)) cmd.group_key = cli::parseGroupKey(argv[++i]);
         }
         else if (arg == "--filter" || arg == "-f") {
             if (!hasValue(i)) continue;
 
             // Step 1: filter key
-            Filter f;
+            cli::Filter f;
             i++;
-            f.key = parseFilterKey(argv[i]);
+            f.key = cli::parseFilterKey(argv[i]);
 
             // Step 2: filter values
             while (i + 1 < argc && argv[i + 1][0] != '-') {
@@ -53,6 +53,18 @@ Command parseArgs(int argc, char* argv[]) {
 
             cmd.filters.push_back(f);
         }
+        else if (arg == "--tag" || arg == "-t") {
+            if (!hasValue(i)) continue;
+            cli::Tag t;
+            i++;
+            t.key = argv[i];
+
+            while (i + 1 < argc && argv[i + 1][0] != '-') {
+                i++;
+                t.val.push_back(argv[i]);
+            }
+            cmd.tags.push_back(t);
+        }
         else if (arg == "--descending" || arg == "-d") {
             cmd.descending = true;
         }
@@ -60,7 +72,7 @@ Command parseArgs(int argc, char* argv[]) {
             cmd.force_refresh = true;
         }
         else if (arg == "debug") {
-            cmd.action = Action::Debug;
+            cmd.action = cli::Action::Debug;
         }
     }
 

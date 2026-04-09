@@ -1,7 +1,8 @@
 #pragma once
+
 #include <string>
 
-enum Color {
+enum class Color {
     Black,
     Red,
     Green,
@@ -14,36 +15,22 @@ enum Color {
 };
 
 struct Style {
-    Color color;
-    bool bold;
-    bool dim;
+    Color color = Color::Default;
+    bool bold = false;
+    bool dim = false;
 };
 
-Style headerStyle{
-    Color::Cyan,
-    true,
-    false,
-};
+inline Style headerStyle{ Color::Cyan, true, false, };
 
-Style nameStyle {
-    Color::White,
-    false,
-    false
-};
+inline Style nameStyle { Color::White, false, false };
 
-Style genreStyle {
-    Color::Green,
-    false,
-    false
-};
+inline Style genreStyle { Color::Green, false, false };
 
-Style pathStyle{
-    Color::Magenta,
-    false,
-    true
-};
+inline Style pathStyle{ Color::Magenta, false, true };
 
-int getColor(Color color)
+inline Style sortStyle{ Color::Red, false, false };
+
+inline int getColor(Color color)
 {
     switch(color) {
     case Color::Black:      return 30;
@@ -59,17 +46,14 @@ int getColor(Color color)
     }
 }
 
-std::string applyStyle(const std::string &text, const Style &style)
-{
-    std::string styled_str;
-    const std::string reset = "\033[0m";
+inline std::string applyStyle(const std::string &text, const Style &style) {
+    std::string styled_str = "\033[";
+    bool first = true;
 
-    styled_str = "\033[" + std::to_string(getColor(style.color));
-    if (style.dim)
-        styled_str += ";2";
-    if (style.bold)
-        styled_str += ";1";
-    styled_str += "m" + text + reset;
+    if (style.bold) { styled_str += (first ? "" : ";") + std::to_string(1); first = false; }
+    if (style.dim) { styled_str += (first ? "" : ";") + std::to_string(2); first = false; }
+    styled_str += (first ? "" : ";") + std::to_string(getColor(style.color));
+    styled_str += "m" + text + "\033[0m";
 
     return styled_str;
 }

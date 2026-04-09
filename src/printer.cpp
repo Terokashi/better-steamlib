@@ -16,9 +16,9 @@ std::string toLower(const std::string &s) {
 }
 
 // Combine multiple filters of the same type
-std::unordered_map<FilterKey, std::vector<std::string>>
-combineFilters(const std::vector<Filter> &filters) {
-    std::unordered_map<FilterKey, std::vector<std::string>> combined;
+std::unordered_map<cli::FilterKey, std::vector<std::string>>
+combineFilters(const std::vector<cli::Filter> &filters) {
+    std::unordered_map<cli::FilterKey, std::vector<std::string>> combined;
     for (const auto &f : filters) {
         auto &vec = combined[f.key];
         vec.insert(vec.end(), f.val.begin(), f.val.end());
@@ -28,7 +28,7 @@ combineFilters(const std::vector<Filter> &filters) {
 
 
 // Filter games
-std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<Filter> &filters) {
+std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<cli::Filter> &filters) {
     std::vector<Game> filtered_games;
     auto combined_filters = combineFilters(filters);
 
@@ -39,7 +39,7 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
             bool found_match = false;
 
             switch (key) {
-            case FilterKey::Name:
+            case cli::FilterKey::Name:
                 for (const auto &val : values) {
                     if (toLower(g.name).find(toLower(val)) != std::string::npos) {
                         found_match = true;
@@ -47,8 +47,7 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
                     }
                 }
                 break;
-
-            case FilterKey::InstallPath:
+            case cli::FilterKey::InstallPath:
                 for (const auto &val : values) {
                     if (g.install_dir.rfind(val, 0) == 0) { // starts-with
                         found_match = true;
@@ -56,8 +55,7 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
                     }
                 }
                 break;
-
-            case FilterKey::LibraryPath:
+            case cli::FilterKey::LibraryPath:
                 for (const auto &val : values) {
                     if (g.library_path.rfind(val, 0) == 0) { // starts-with
                         found_match = true;
@@ -65,8 +63,7 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
                     }
                 }
                 break;
-
-            case FilterKey::Genre:
+            case cli::FilterKey::Genre:
                 for (const auto &val : values) {
                     // works whether g.genres is vector or unordered_set
                     if (std::find(g.genres.begin(), g.genres.end(), val) != g.genres.end()) {
@@ -75,8 +72,15 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
                     }
                 }
                 break;
-
-            case FilterKey::None:
+            case cli::FilterKey::Tag:
+                for (const auto &val : values) {
+                    if (std::find(g.tags.begin(), g.tags.end(), val) != g.tags.end()) {
+                        found_match = true;
+                        break;
+                    }
+                }
+                break;
+            case cli::FilterKey::None:
                 found_match = true;
                 break;
             }
@@ -86,7 +90,6 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
                 break;
             }
         }
-
         if (keep_game) {
             filtered_games.push_back(g);
         }
@@ -108,27 +111,31 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
  *         A map where each key is a group and the value is a vector of games in that group.
  */
 std::unordered_map<std::string, std::vector<Game>>
-groupGames(const std::vector<Game> &games, GroupKey key) {
+groupGames(const std::vector<Game> &games, cli::GroupKey key) {
     std::unordered_map<std::string, std::vector<Game>> grouped;
 
     for (const Game &g : games) {
         std::string groupKey;
         switch (key) {
-        case GroupKey::LibraryPath:
+        case cli::GroupKey::LibraryPath:
             groupKey = g.library_path;
             break;
-        case GroupKey::InstallPath:
+        case cli::GroupKey::InstallPath:
             groupKey = g.install_dir;
             break;
-        case GroupKey::Name:
+        case cli::GroupKey::Name:
             groupKey = g.name;
             break;
-        case GroupKey::Genre:
+        case cli::GroupKey::Genre:
             for (const std::string &genre : g.genres) {
                 grouped[genre].push_back(g);
             }
             continue;
-        case GroupKey::None:
+        case cli::GroupKey::Tag:
+            for (const std::string &tag : g.tags) {
+                grouped[tag].push_back(g);
+            }
+        case cli::GroupKey::None:
             break;
         }
         grouped[groupKey].push_back(g);
@@ -138,17 +145,17 @@ groupGames(const std::vector<Game> &games, GroupKey key) {
 }
 
 
-std::string getSortValue(const Game &g) {
-    std::vector<std::string> sorted_genres(g.genres.begin(), g.genres.end());
-    std::sort(sorted_genres.begin(), sorted_genres.end());
+std::string getSortValue(const std::unordered_set<std::string> &list) {
+    std::vector<std::string> sorted_list(list.begin(), list.end());
+    std::sort(sorted_list.begin(), sorted_list.end());
 
-    std::string genre_out;
-    for (const std::string& genre : g.genres) {
-        if (!genre_out.empty())
-            genre_out += ", ";
-        genre_out += genre;
+    std::string list_out;
+    for (const std::string &l : list) {
+        if (!list_out.empty())
+            list_out += ", ";
+        list_out += l;
     }
-    return genre_out;
+    return list_out;
 };
 
 /**
@@ -161,31 +168,39 @@ std::string getSortValue(const Game &g) {
  * @param key Sorting key.
  * @param descending True to sort in descending order, false for ascending.
  */
-void sortGames(std::vector<Game> &games, SortKey key, bool descending) {
+void sortGames(std::vector<Game> &games, cli::SortKey key, bool descending) {
     std::sort(games.begin(), games.end(),
               [&key, descending](const Game &a, const Game &b) {
                   bool result = false;
                   switch (key) {
-                  case SortKey::Name:
+                  case cli::SortKey::Name:
                       result = a.name < b.name;
                       break;
-                  case SortKey::InstallPath:
+                  case cli::SortKey::InstallPath:
                       result = a.install_dir < b.install_dir;
                       break;
-                  case SortKey::LibraryPath:
+                  case cli::SortKey::LibraryPath:
                       result = a.library_path < b.library_path;
                       break;
-                  case SortKey::AppID:
+                  case cli::SortKey::AppID:
                       result = a.appid < b.appid;
                       break;
-                  case SortKey::Genre: {
+                  case cli::SortKey::Genre: {
                       std::string a_key, b_key;
-                      a_key = getSortValue(a);
-                      b_key = getSortValue(b);
+                      a_key = getSortValue(a.genres);
+                      b_key = getSortValue(b.genres);
                       result = a_key < b_key;
                       break;
                   }
-                  case SortKey::None:
+                  case cli::SortKey::Tag: {
+                      std::string a_key, b_key;
+                      a_key = getSortValue(a.tags);
+                      b_key = getSortValue(b.tags);
+                      result = a_key < b_key;
+                      break;
+                  }
+
+                  case cli::SortKey::None:
                       break;
                   }
                   return descending ? !result : result;
@@ -204,6 +219,18 @@ std::string formatGenres(const std::unordered_set<std::string> &genres) {
     return formatted_genres;
 }
 
+std::string formatTags(const std::unordered_set<std::string> &tags) {
+    std::vector<std::string> tags_to_sort(tags.begin(), tags.end());
+    std::sort(tags_to_sort.begin(), tags_to_sort.end());
+    std::string formatted_tags;
+    for(size_t i = 0; i < tags_to_sort.size(); i++) {
+        formatted_tags += tags_to_sort[i];
+        if (i < tags_to_sort.size() - 1)
+            formatted_tags += ", ";
+    }
+    return formatted_tags;
+}
+
 std::string sanitize(std::string to_sanitize)
 {
     std::string sanitized;
@@ -214,15 +241,39 @@ std::string sanitize(std::string to_sanitize)
     return sanitized;
 }
 
-std::vector<Row> buildRows(const std::vector<Game> &games) {
+std::vector<Row> buildRows(const std::vector<Game> &games, cli::SortKey &sort_key) {
     std::vector<Row> rows;
-    Row tmp_row;
     // Go through each game
     for (const Game &g : games)
     {
+        Row tmp_row;
         tmp_row.genres = sanitize(formatGenres(g.genres));
         tmp_row.name = sanitize(g.name);
         tmp_row.path = sanitize(g.install_dir);
+
+        switch(sort_key) {
+        case cli::SortKey::AppID:
+            tmp_row.sort_value = sanitize(std::to_string(g.appid));
+            break;
+        case cli::SortKey::Genre:
+            tmp_row.sort_value = sanitize(formatGenres(g.genres));
+            break;
+        case cli::SortKey::InstallPath:
+            tmp_row.sort_value = sanitize(g.install_dir);
+            break;
+        case cli::SortKey::LibraryPath:
+            tmp_row.sort_value = sanitize(g.library_path);
+            break;
+        case cli::SortKey::Name:
+            tmp_row.sort_value = sanitize(g.name);
+            break;
+        case cli::SortKey::Tag:
+            tmp_row.sort_value = sanitize(formatTags(g.tags));
+            break;
+        case cli::SortKey::None:
+            tmp_row.sort_value = "";
+            break;
+        }
 
         rows.push_back(tmp_row);
     }
@@ -244,17 +295,26 @@ Widths computeColumnWidths(const std::vector<Row> &rows) {
 
         if(r.path.length() > max_widths.max_path_width)
             max_widths.max_path_width = r.path.length();
+        if(r.sort_value.length() > max_widths.max_sort_width)
+            max_widths.max_sort_width = r.sort_value.length();
     }
 
     // check if real Max too big
     if(max_widths.max_genre_width > 50) max_widths.max_genre_width = 50;
     if(max_widths.max_name_width > 40) max_widths.max_name_width = 40;
     if(max_widths.max_path_width > 60) max_widths.max_path_width = 60;
+    if(max_widths.max_sort_width > 60) max_widths.max_sort_width = 60;
+
+    // check if real Max too small
+    if(max_widths.max_genre_width < 13) max_widths.max_genre_width = 13;
+    if(max_widths.max_name_width < 11) max_widths.max_name_width = 11;
+    if(max_widths.max_path_width < 14) max_widths.max_path_width = 14;
+    if(max_widths.max_sort_width < 12) max_widths.max_sort_width = 12;
 
     return max_widths;
 }
 
-std::string shorten(const std::string toShorten, int &width)
+std::string shorten(const std::string toShorten, int width)
 {
     std::string shortened;
 
@@ -268,11 +328,12 @@ std::string shorten(const std::string toShorten, int &width)
     return shortened;
 }
 
-void printSeparator(Widths &width){
-    std::cout << std::setfill('-')
-              << std::setw(width.max_name_width + 2) << "" << "-+-"
-              << std::setw(width.max_genre_width + 2) << "" << "-+-"
-              << std::setw(width.max_path_width + 2) << "" << "-+"
+void printSeparator(Widths &width) {
+    std::cout << "+"
+              << std::string(width.max_name_width + 2, '-') << "+"
+              << std::string(width.max_genre_width + 2, '-') << "+"
+              << std::string(width.max_path_width + 2, '-') << "+"
+              << std::string(width.max_sort_width + 2, '-') << "+"
               << std::endl;
 }
 
@@ -292,9 +353,11 @@ std::string padStyle(const std::string &txt, int width, const Style &style)
 void printColumnHeader(Widths &width) {
     std::cout << std::setfill(' ')
               << std::left
-              << padStyle("Game Name", width.max_name_width + 2, nameStyle) << " | "
-              << padStyle("Game Genres", width.max_genre_width + 2, genreStyle) << " | "
-              << padStyle("Game Install", width.max_path_width + 2, pathStyle) << " | "
+              << "| "
+              << padStyle("Game Name", width.max_name_width, nameStyle) << " | "
+              << padStyle("Game Genres", width.max_genre_width, genreStyle) << " | "
+              << padStyle("Game Install", width.max_path_width, pathStyle) << " | "
+              << padStyle("Sort Value", width.max_sort_width, sortStyle) << " |"
               << std::endl;
 }
 
@@ -302,30 +365,31 @@ void printRow(const Row &row, Widths &width) {
     std::string name = shorten(row.name, width.max_name_width);
     std::string genre = shorten(row.genres, width.max_genre_width);
     std::string path = shorten(row.path, width.max_path_width);
+    std::string sort = shorten(row.sort_value, width.max_sort_width);
 
-    std::cout << std::setfill(' ')
-              << std::left
-              << padStyle(name, width.max_name_width + 2, nameStyle) << " | "
-              << padStyle(genre, width.max_genre_width + 2, genreStyle)  << " | "
-              << padStyle(path, width.max_path_width + 2, pathStyle) << " |"
+    std::cout << "| "
+              << padStyle(name, width.max_name_width, nameStyle) << " | "
+              << padStyle(genre, width.max_genre_width, genreStyle) << " | "
+              << padStyle(path, width.max_path_width, pathStyle) << " | "
+              << padStyle(sort, width.max_sort_width, sortStyle) << " |"
               << std::endl;
 
 }
 
-void printRows(std::vector<Row> &rows, Widths &width) {
-    printColumnHeader(width);
-    printSeparator(width);
+void printRows(std::vector<Row> &rows, Widths &widths) {
+    printColumnHeader(widths);
+    printSeparator(widths);
     for (const Row &r : rows){
-        printRow(r, width);
+        printRow(r, widths);
     }
-    printSeparator(width);
+    printSeparator(widths);
     std::cout << std::endl;
 }
 
-void printGroupHeader(const std::string &groupName, const GroupKey &group_key , std::size_t game_count) {
+void printGroupHeader(const std::string &groupName, const cli::GroupKey &group_key , std::size_t game_count) {
     std::string out;
     int len;
-    if(group_key == GroupKey::LibraryPath)
+    if(group_key == cli::GroupKey::LibraryPath)
     {
         out += "(";                 // add opening parenthesis
         out += groupName[0];        // add first character of groupName
@@ -337,7 +401,7 @@ void printGroupHeader(const std::string &groupName, const GroupKey &group_key , 
                   << std::setw(len) << "=" << std::endl;
         return;
     }
-    out += "(" + groupName + ":\\) Game count: " + std::to_string(game_count);
+    out += "(" + groupName + ") Game count: " + std::to_string(game_count);
     len = out.length();
     std::cout << padStyle(out, len, headerStyle) << std::endl;
     std::cout << std::setfill('=')
@@ -360,9 +424,9 @@ void printGroupHeader(const std::string &groupName, const GroupKey &group_key , 
  */
 void printGames(
     std::vector<Game> &games,
-    GroupKey group_key,
-    SortKey sort_key,
-    std::vector<Filter> Filters,
+    cli::GroupKey group_key,
+    cli::SortKey sort_key,
+    std::vector<cli::Filter> Filters,
     bool descending
     ) {
     if (games.empty()) {
@@ -371,7 +435,7 @@ void printGames(
     }
 
     std::vector<Game> filtered_games = filterGames(games, Filters);
-    std::vector<Row> rows = buildRows(filtered_games);
+    std::vector<Row> rows = buildRows(filtered_games, sort_key);
     Widths width = computeColumnWidths(rows);
     if (filtered_games.empty())
     {
@@ -380,11 +444,11 @@ void printGames(
     }
 
     // If no grouping, just sort and print
-    if (group_key == GroupKey::None) {
+    if (group_key == cli::GroupKey::None) {
         std::vector<Game> sorted_games = filtered_games;
         sortGames(sorted_games, sort_key, descending);
 
-        rows = buildRows(sorted_games);
+        rows = buildRows(sorted_games, sort_key);
 
         printRows(rows, width);
         return;
@@ -405,8 +469,8 @@ void printGames(
         std::vector<Game> sortedGroup = grouped[k];
         sortGames(sortedGroup, sort_key, descending);
 
-        printGroupHeader(k, group_key ,sortedGroup.size());
-        rows = buildRows(sortedGroup);
+        printGroupHeader(k, group_key, sortedGroup.size());
+        rows = buildRows(sortedGroup, sort_key);
         printRows(rows, width);
     }
     return;

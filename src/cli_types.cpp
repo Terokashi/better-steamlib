@@ -2,122 +2,131 @@
 #include <iostream>
 
 /**
- * @brief Parses a string into a SortKey enum.
+ * @brief Parses a string into a cli::SortKey enum.
  *
  * Converts a textual representation of a sort key into the corresponding
- * SortKey enum value.
+ * cli::SortKey enum value.
  *
  * @param input The string to parse ("name", "install", "library", "appid").
- * @return The corresponding SortKey value.
+ * @return The corresponding cli::SortKey value.
  * @throws std::invalid_argument If the input does not match a valid key.
  */
-SortKey parseSortKey(const std::string &input)
+cli::SortKey cli::parseSortKey(const std::string &input)
 {
-    if (input == "name") return SortKey::Name;
-    if (input == "install") return SortKey::InstallPath;
-    if (input == "library") return SortKey::LibraryPath;
-    if (input == "appid") return SortKey::AppID;
-    if (input == "genre") return SortKey::Genre;
+    if (input == "name") return cli::SortKey::Name;
+    if (input == "install") return cli::SortKey::InstallPath;
+    if (input == "library") return cli::SortKey::LibraryPath;
+    if (input == "appid") return cli::SortKey::AppID;
+    if (input == "genre") return cli::SortKey::Genre;
+    if (input == "tag") return cli::SortKey::Tag;
     std::cout << "Using no sorting!\n";
 
-    return SortKey::None;
+    return cli::SortKey::None;
 }
 
 /**
- * @brief Parses a string into a GroupKey enum.
+ * @brief Parses a string into a cli::GroupKey enum.
  *
  * Converts a textual representation of a group key into the corresponding
- * GroupKey enum value.
+ * cli::GroupKey enum value.
  *
  * @param input The string to parse ("name", "library", "install").
- * @return The corresponding GroupKey value.
+ * @return The corresponding cli::GroupKey value.
  * @throws std::invalid_argument If the input does not match a valid key.
  */
-GroupKey parseGroupKey(const std::string &input)
+cli::GroupKey cli::parseGroupKey(const std::string &input)
 {
-    if (input == "name") return GroupKey::Name;
-    if (input == "library") return GroupKey::LibraryPath;
-    if (input == "install") return GroupKey::InstallPath;
-    if (input == "genre") return GroupKey::Genre;
+    if (input == "name") return cli::GroupKey::Name;
+    if (input == "library") return cli::GroupKey::LibraryPath;
+    if (input == "install") return cli::GroupKey::InstallPath;
+    if (input == "genre") return cli::GroupKey::Genre;
+    if (input == "tag") return cli::GroupKey::Tag;
     std::cout << "Using no grouping!\n";
 
-    return GroupKey::None;
+    return cli::GroupKey::None;
 }
 
-FilterKey parseFilterKey(const std::string &input)
+cli::FilterKey cli::parseFilterKey(const std::string &input)
 {
-    if (input == "genre") return FilterKey::Genre;
-    if (input == "name") return FilterKey::Name;
-    if (input == "library") return FilterKey::LibraryPath;
-    if (input == "install") return FilterKey::InstallPath;
+    if (input == "genre") return cli::FilterKey::Genre;
+    if (input == "name") return cli::FilterKey::Name;
+    if (input == "library") return cli::FilterKey::LibraryPath;
+    if (input == "install") return cli::FilterKey::InstallPath;
+    if (input == "tag") return cli::FilterKey::Tag;
     std::cout << "Using no Filter!\n";
 
-    return FilterKey::None;
+    return cli::FilterKey::None;
 }
 
 /**
- * @brief Converts a SortKey enum to a human-readable string.
+ * @brief Converts a cli::SortKey enum to a human-readable string.
  *
- * @param key The SortKey value to convert.
- * @return A string representing the SortKey.
- * @throws std::invalid_argument If an invalid SortKey is provided.
+ * @param key The cli::SortKey value to convert.
+ * @return A string representing the cli::SortKey.
+ * @throws std::invalid_argument If an invalid cli::SortKey is provided.
  */
-std::string toString(SortKey key)
+std::string cli::toString(cli::SortKey key)
 {
     switch(key) {
-    case SortKey::Name:
+    case cli::SortKey::Name:
         return "name";
-    case SortKey::InstallPath:
+    case cli::SortKey::InstallPath:
         return "Install path";
-    case SortKey::LibraryPath:
+    case cli::SortKey::LibraryPath:
         return "Library path";
-    case SortKey::AppID:
+    case cli::SortKey::AppID:
         return "AppID";
-    case SortKey::Genre:
+    case cli::SortKey::Genre:
         return "Genre";
-    case SortKey::None:
+    case cli::SortKey::Tag:
+        return "Tag";
+    case cli::SortKey::None:
         return "None";
     }
     throw std::invalid_argument("Invalid sort key");
 }
 
 /**
- * @brief Converts a GroupKey enum to a human-readable string.
+ * @brief Converts a cli::GroupKey enum to a human-readable string.
  *
- * @param key The GroupKey value to convert.
- * @return A string representing the GroupKey.
- * @throws std::invalid_argument If an invalid GroupKey is provided.
+ * @param key The cli::GroupKey value to convert.
+ * @return A string representing the cli::GroupKey.
+ * @throws std::invalid_argument If an invalid cli::GroupKey is provided.
  */
-std::string toString(GroupKey key)
+std::string cli::toString(cli::GroupKey key)
 {
     switch(key) {
-    case GroupKey::None:
+    case cli::GroupKey::None:
         return "None";
-    case GroupKey::LibraryPath:
+    case cli::GroupKey::LibraryPath:
         return "Library path";
-    case GroupKey::InstallPath:
+    case cli::GroupKey::InstallPath:
         return "Install path";
-    case GroupKey::Genre:
+    case cli::GroupKey::Genre:
         return "Genre";
-    case GroupKey::Name:
+    case cli::GroupKey::Name:
         return "Name";
+    case cli::GroupKey::Tag:
+        return "Tag";
     }
     throw std::invalid_argument("Invalid group key");
 }
 
-std::string toString(FilterKey key)
+std::string cli::toString(cli::FilterKey key)
 {
     switch(key) {
-    case FilterKey::None:
+    case cli::FilterKey::None:
         return "None";
-    case FilterKey::Genre:
+    case cli::FilterKey::Genre:
         return "Genre";
-    case FilterKey::InstallPath:
+    case cli::FilterKey::InstallPath:
         return "Install Path";
-    case FilterKey::LibraryPath:
+    case cli::FilterKey::LibraryPath:
         return "Library path";
-    case FilterKey::Name:
+    case cli::FilterKey::Name:
         return "Name";
+    case cli::FilterKey::Tag:
+        return "Tag";
     }
-    return "";
+    throw std::invalid_argument("Invalid filter key");
 }

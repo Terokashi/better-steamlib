@@ -12,15 +12,17 @@ struct Row {
     std::string genres; // second column
     // std::string size;   // third column (not implemented)
     std::string path;   // fourth column
+    std::string sort_value;
 };
 
 struct Widths {
     int max_name_width = 0;
     int max_genre_width = 0;
     int max_path_width = 0;
+    int max_sort_width = 0;
 };
 
-std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<Filter> &Filters);
+std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<cli::Filter> &Filters);
 
 /**
  * @brief Groups games based on a specified key.
@@ -35,7 +37,7 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
  *         and the value is a vector of Game objects in that group.
  */
 std::unordered_map<std::string, std::vector<Game>>
-groupGames(const std::vector<Game> &games, GroupKey key);
+groupGames(const std::vector<Game> &games, cli::GroupKey key);
 
 /**
  * @brief Sorts a list of games in-place.
@@ -47,21 +49,19 @@ groupGames(const std::vector<Game> &games, GroupKey key);
  * @param key The sorting criterion.
  * @param descending If true, sorts in descending order; otherwise ascending.
  */
-void sortGames(const std::vector<Game> &games, SortKey key, bool descending = false);
+void sortGames(std::vector<Game> &games, cli::SortKey key, bool descending = false);
 
-std::vector<Row> buildRows(const std::vector<Game> &games);
+std::vector<Row> buildRows(const std::vector<Game> &games, cli::SortKey &sort_key);
 
-Widths computeColumnWidths(const std::vector<std::string> &rows);
-
-std::vector<std::string> formatRows(std::vector<std::string> &rows, Widths &width);
+Widths computeColumnWidths(const std::vector<Row> &rows);
 
 void printGroupHeader(const std::string &group_name, std::size_t game_count);
 
-std::string shorten(const std::string toShorten, int &width);
+std::string shorten(const std::string toShorten, int width);
 
 void printRow(const Row &row, Widths &width);
 
-void printRows(std::vector<Row> formatted_str);
+void printRows(std::vector<Row> &formatted_str, Widths &widths);
 
 std::string formatGenres(std::unordered_set<std::string> &genres);
 
@@ -80,8 +80,8 @@ std::string formatGenres(std::unordered_set<std::string> &genres);
  */
 void printGames(
     std::vector<Game> &games,
-    GroupKey group_key,
-    SortKey sort_key,
-    std::vector<Filter> Filters,
+    cli::GroupKey group_key,
+    cli::SortKey sort_key,
+    std::vector<cli::Filter> Filters,
     bool descending = false
     );
