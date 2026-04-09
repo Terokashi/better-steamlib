@@ -17,6 +17,7 @@ set(SOURCES
     src/cli_parser.cpp
     src/cli_types.cpp
     src/api_client.cpp
+
 )
 
 # --- Headers (for IDE visibility) ---
@@ -29,6 +30,7 @@ set(HEADERS
     include/cli_types.h
     include/api_client.h
     include/style.h
+    include/igamelibrary.h
 )
 
 # --- Executable ---
@@ -37,8 +39,6 @@ add_executable(better-steamlib ${SOURCES} ${HEADERS})
 # --- Include dirs ---
 target_include_directories(better-steamlib PRIVATE
     include
-    # add nlohmann-json include from vcpkg manually
-    "C:/tools/vcpkg/packages/nlohmann-json_x64-mingw-dynamic/include"
 )
 
 # --- Link libraries ---

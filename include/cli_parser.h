@@ -15,23 +15,24 @@ struct Command {
      *
      * Defaults to Action::List if no specific action is provided.
      */
-    Action action = Action::List;
+    cli::Action action = cli::Action::List;
 
     /**
      * @brief Key used for sorting results.
      *
      * Defaults to SortKey::Name.
      */
-    SortKey sort_key = SortKey::Name;
+    cli::SortKey sort_key = cli::SortKey::Name;
 
     /**
      * @brief Key used for grouping results.
      *
      * Defaults to GroupKey::LibraryPath.
      */
-    GroupKey group_key = GroupKey::LibraryPath;
+    cli::GroupKey group_key = cli::GroupKey::LibraryPath;
 
-    std::vector<Filter> filters;
+    std::vector<cli::Filter> filters;
+    std::vector<cli::Tag> tags;
 
     /**
      * @brief Whether sorting should be in descending order.

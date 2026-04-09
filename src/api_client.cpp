@@ -5,16 +5,20 @@
 #include <future>
 
 #include <iostream>
+#include <sstream>
 
 #include "api_client.h"
 
-void to_json(nlohmann::json& j, const std::unordered_set<std::string> &genres)
+
+using json = nlohmann::json;
+
+void to_json(json& j, const std::unordered_set<std::string> &genres)
 {
-    j = nlohmann::json{
+    j = json{
         {"genres", genres}
     };
 }
-void from_json(const nlohmann::json &j, std::unordered_set<std::string> &genres)
+void from_json(const json &j, std::unordered_set<std::string> &genres)
 {
     j.at("genres").get_to(genres);
 }
@@ -36,33 +40,6 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::stri
 }
 
 /**
- * @brief Performs an HTTP GET request to the specified URL.
- *
- * Uses libcurl to fetch content from the given URL. Follows redirects
- * and sets a 10-second timeout.
- *
- * @param rUrl The URL to fetch.
- * @return A string containing the response body. Empty if the request fails.
- */
-std::string httpGet(const std::string &rUrl) {
-    CURL* curl = curl_easy_init();
-    std::string response;
-
-    if(curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, rUrl.c_str());
-        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
-        curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
-    }
-    return response;
-}
-
-using json = nlohmann::json;
-
-/**
  * @brief Fetches the list of genres for a given Steam app.
  *
  * Queries the Steam Store API for the app's details and extracts
@@ -71,52 +48,28 @@ using json = nlohmann::json;
  * @param appid The Steam application ID.
  * @return A vector of genre names. Empty if none are found or request fails.
  */
-std::unordered_set<std::string> fetchGenres(int appid)
+std::unordered_set<std::string> ApiClient::fetchGenres(int appid)
 {
-    std::string app_path = "cache/apps/" + std::to_string(appid) + ".json";
+    std::string app_path = cache_path + std::to_string(appid) + ".json";
     std::filesystem::create_directories(std::filesystem::path(app_path).parent_path());
-
-    std::mutex cout_mutex;
     std::ostringstream oss;
+    std::unordered_set<std::string> genres;
 
+    // check if game already exists in cache
     if (std::filesystem::exists(app_path))
     {
-        json j;
-        std::ifstream file(app_path);
-        if(file.is_open()) {
-            try {
-                file >> j;
-                std::unordered_set<std::string> genres;
-                from_json(j, genres);
-                {
-                    oss << "[CACHE HIT] " << appid << std::endl;
-                    std::lock_guard<std::mutex> lock(cout_mutex);
-                    std::cout << oss.str();
-                }
-                return genres;
-            }
-            catch (const std::exception &e) {
-                std::cout << "Something went wrong! " << e.what() << std::endl;
-            }
-        }
+        logger("[LOAD CACHE] " + std::to_string(appid));
+        return loadFromCache(appid);
     }
-    {
-        oss << "[API FETCH] " << std::to_string(appid) << std::endl;
-        std::lock_guard<std::mutex> lock(cout_mutex);
-        std::cout << oss.str();
-    }
-    std::string url =
-        "https://store.steampowered.com/api/appdetails?appids=" +
-        std::to_string(appid) + "&l=en";
+    std::string url = base_url + std::to_string(appid) + "&l=en&cc=US";
 
-    std::unordered_set<std::string> genres;
+    logger("[API FETCH] " + std::to_string(appid));
+
     // Call Steam API
     std::string response = httpGet(url);
     if (response.empty()) {
         {
-            oss << "[API FETCH] " << std::to_string(appid) << std::endl;
-            std::lock_guard<std::mutex> lock(cout_mutex);
-            std::cout << "[API FAIL]" << std::endl;
+            logger("[API FETCH FAIL] " + std::to_string(appid));
         }
         return genres;
     }
@@ -138,34 +91,17 @@ std::unordered_set<std::string> fetchGenres(int appid)
         }
         else {
             {
-                oss << "[CACHE WRITE EMPTY] " << std::to_string(appid) << std::endl;
-                std::lock_guard<std::mutex> lock(cout_mutex);
-                std::cout << oss.str();
+                std::cout << j_response.dump(4);
+                logger("[CACHE WRITE EMPTY] " + std::to_string(appid));
             }
         }
     } catch (const std::exception &e) {
         {
-            oss << "Something went wrong! " << e.what() << std::endl;
-            std::lock_guard<std::mutex> lock(cout_mutex);
-            std::cout << oss.str();
+            logger("Something went wrong! " + std::string(e.what()));
         }
     }
 
-    json j_genres;
-    std::ofstream file(app_path);
-    if (file.is_open())
-    {
-        to_json(j_genres, genres);
-        file << j_genres.dump(4);
-    }
-    else
-    {
-        {
-            oss << "[CACHE FILE ERROR]" << std::endl;
-            std::lock_guard<std::mutex> lock(cout_mutex);
-            std::cout << oss.str();
-        }
-    }
+    saveToCache(appid, genres);
     return genres;
 }
 
@@ -176,7 +112,7 @@ std::unordered_set<std::string> fetchGenres(int appid)
  *
  * @param game The Game object to enrich.
  */
-void enrichGameWithGenres(Game &game)
+void ApiClient::enrichGameWithGenres(Game &game)
 {
     if (!game.genres.empty())
         return;
@@ -190,17 +126,16 @@ void enrichGameWithGenres(Game &game)
  *
  * @param games Vector of Game objects to enrich.
  */
-void enrichGamesParallel(std::vector<Game> &games, size_t max_concurrent)
+void ApiClient::enrichGamesParallel(std::vector<Game> &games, size_t max_concurrent)
 {
     std::vector<std::future<void>> future;
     for (size_t i = 0; i < games.size(); ++i)
     {
         try {
-            future.push_back(std::async(std::launch::async, enrichGameWithGenres, std::ref(games[i])));
+            future.push_back(std::async(std::launch::async, &ApiClient::enrichGameWithGenres, this, std::ref(games[i])));
         }
-        catch (const std::exception e) {
-            std::cout << "Something failed! " << e.what() << std::endl;
-            std::cout << "Happened to game: [" << games[i].name << "] [" << games[i].appid << "]" << std::endl;
+        catch (const std::exception &e) {
+            logger("Something went wrong! [" + std::to_string(games[i].appid) + " " + std::string(e.what()) + "]");
         }
 
         if (future.size() >= max_concurrent)
@@ -210,4 +145,77 @@ void enrichGamesParallel(std::vector<Game> &games, size_t max_concurrent)
         }
     }
     for (auto &f : future) f.get();
+}
+
+/**
+ * @brief Performs an HTTP GET request to the specified URL.
+ *
+ * Uses libcurl to fetch content from the given URL. Follows redirects
+ * and sets a 10-second timeout.
+ *
+ * @param rUrl The URL to fetch.
+ * @return A string containing the response body. Empty if the request fails.
+ */
+std::string ApiClient::httpGet(const std::string &rUrl) {
+    CURL* curl = curl_easy_init();
+    std::string response;
+
+    if(curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, rUrl.c_str());
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
+        curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+    }
+    return response;
+}
+
+void ApiClient::saveToCache(int appid, const std::unordered_set<std::string> &genres)
+{
+    std::string app_path = cache_path + std::to_string(appid) + ".json";
+    std::ostringstream oss;
+    json j_genres;
+
+    std::ofstream file(app_path);
+    if (file.is_open())
+    {
+        to_json(j_genres, genres);
+        file << j_genres.dump(4);
+    }
+    else
+    {
+        {
+            logger("[CACHE FILE ERROR] " + std::to_string(appid));
+        }
+    }
+}
+
+std::unordered_set<std::string> ApiClient::loadFromCache(int appid)
+{
+    std::unordered_set<std::string> genres;
+    json j;
+    std::ifstream file(cache_path + std::to_string(appid) + ".json");
+    if(file.is_open()) {
+        try {
+            file >> j;
+            from_json(j, genres);
+            return genres;
+        }
+        catch (const std::exception &e) {
+            logger("[CACHE FAIL] " + std::to_string(appid) + std::string(e.what()));
+            return genres;
+        }
+    }
+    return genres;
+}
+
+void ApiClient::logger(const std::string &log)
+{
+    std::ostringstream oss;
+
+    oss << log << std::endl;
+    std::lock_guard<std::mutex> lock(cout_mutex);
+    std::cout << oss.str();
 }

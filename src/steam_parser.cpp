@@ -10,7 +10,7 @@
  * @param path Path to the file.
  * @return File content as a std::string. Returns empty string if the file cannot be opened.
  */
-std::string getContent(const std::string &path) {
+std::string SteamLibrary::getContent(const std::string &path) {
     std::ifstream file(path);
     if (!file.is_open()) {
         std::cerr << "Failed to open file: " << path << std::endl;
@@ -31,7 +31,7 @@ std::string getContent(const std::string &path) {
  * @param key The key to search for (e.g., "name", "appid", "installdir").
  * @return The value as a string, or empty if the key is not found.
  */
-std::string parseManifest(const std::string &content, const std::string &key) {
+std::string SteamLibrary::parseManifest(const std::string &content, const std::string &key) {
     size_t keyPos = content.find("\"" + key + "\"");
     if (keyPos == std::string::npos) return "";
 
@@ -52,7 +52,7 @@ std::string parseManifest(const std::string &content, const std::string &key) {
  * @param escape_paths Vector of escaped paths from VDF files.
  * @return Vector of unescaped paths.
  */
-std::vector<std::string> unescapePaths(const std::vector<std::string> &escape_paths) {
+std::vector<std::string> SteamLibrary::unescapePaths(const std::vector<std::string> &escape_paths) {
     std::vector<std::string> results;
 
     for (const auto &escape_path : escape_paths) {
@@ -80,7 +80,7 @@ std::vector<std::string> unescapePaths(const std::vector<std::string> &escape_pa
  * @param find The key to find (e.g., "path").
  * @return Vector of values associated with the key.
  */
-std::vector<std::string> getPaths(const std::string &content, const std::string &find) {
+std::vector<std::string> SteamLibrary::getPaths(const std::string &content, const std::string &find) {
     std::vector<std::string> results;
     size_t pos = 0;
 
@@ -108,7 +108,7 @@ std::vector<std::string> getPaths(const std::string &content, const std::string 
  * @param apps Subfolder containing manifests (typically "\\steamapps").
  * @return Vector of AppManifest objects containing library path and manifest path.
  */
-std::vector<AppManifest> getManifests(const std::vector<std::string> &library_paths, const std::string &apps) {
+std::vector<AppManifest> SteamLibrary::getManifests(const std::vector<std::string> &library_paths, const std::string &apps) {
     std::vector<AppManifest> manifests;
 
     for (const auto &path : library_paths) {
@@ -139,7 +139,7 @@ std::vector<AppManifest> getManifests(const std::vector<std::string> &library_pa
  * @param manifests Vector of AppManifest objects to parse.
  * @return Vector of Game objects representing installed games.
  */
-std::vector<Game> getGames(const std::vector<AppManifest> &manifests) {
+std::vector<Game> SteamLibrary::getGames(const std::vector<AppManifest> &manifests) {
     std::vector<Game> games;
 
     for (const auto &manifest : manifests) {
@@ -150,6 +150,7 @@ std::vector<Game> getGames(const std::vector<AppManifest> &manifests) {
         g.manifest_path = manifest.path;
 
         std::string appidStr = parseManifest(content, "appid");
+        if (appidStr == "228980") continue;
         if (!appidStr.empty()) g.appid = std::stoi(appidStr);
 
         g.install_dir = parseManifest(content, "installdir");
@@ -159,4 +160,17 @@ std::vector<Game> getGames(const std::vector<AppManifest> &manifests) {
     }
 
     return games;
+}
+
+void SteamLibrary::refresh(){
+    std::string content = getContent(library_path);
+    std::vector<std::string> escape_paths = getPaths(content, "path");
+    std::vector<std::string> library_paths = unescapePaths(escape_paths);
+    std::vector<AppManifest> manifests = getManifests(library_paths, R"(\steamapps)");
+    std::vector<Game> games = getGames(manifests);
+
+    m_cache.save(games);
+}
+std::vector<Game> SteamLibrary::loadGames(){
+    return m_cache.load();
 }
