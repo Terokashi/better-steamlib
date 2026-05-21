@@ -39,11 +39,8 @@
 
 # debug information files
 *.dwo
-<<<<<<< HEAD
-=======
 
 *.cmake
 .qtcreator*
 build*
 *.odt
->>>>>>> master
