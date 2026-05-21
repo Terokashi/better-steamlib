@@ -48,9 +48,9 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::stri
  * @param appid The Steam application ID.
  * @return A vector of genre names. Empty if none are found or request fails.
  */
-std::unordered_set<std::string> ApiClient::fetchGenres(int appid)
+std::unordered_set<std::string> ApiClient::fetchGenres(std::string appid)
 {
-    std::string app_path = cache_path + std::to_string(appid) + ".json";
+    std::string app_path = cache_path + appid + ".json";
     std::filesystem::create_directories(std::filesystem::path(app_path).parent_path());
     std::ostringstream oss;
     std::unordered_set<std::string> genres;
@@ -58,18 +58,18 @@ std::unordered_set<std::string> ApiClient::fetchGenres(int appid)
     // check if game already exists in cache
     if (std::filesystem::exists(app_path))
     {
-        logger("[LOAD CACHE] " + std::to_string(appid));
+        logger("[LOAD CACHE] " + appid);
         return loadFromCache(appid);
     }
-    std::string url = base_url + std::to_string(appid) + "&l=en&cc=US";
+    std::string url = base_url + appid + "&l=en&cc=US";
 
-    logger("[API FETCH] " + std::to_string(appid));
+    logger("[API FETCH] " + appid);
 
     // Call Steam API
     std::string response = httpGet(url);
     if (response.empty()) {
         {
-            logger("[API FETCH FAIL] " + std::to_string(appid));
+            logger("[API FETCH FAIL] " + appid);
         }
         return genres;
     }
@@ -78,13 +78,11 @@ std::unordered_set<std::string> ApiClient::fetchGenres(int appid)
     try {
         json j_response = json::parse(response);
 
-        std::string appid_str = std::to_string(appid);
-
-        if (j_response.contains(appid_str) &&
-            j_response[appid_str]["success"] == true &&
-            j_response[appid_str]["data"].contains("genres"))
+        if (j_response.contains(appid) &&
+            j_response[appid]["success"] == true &&
+            j_response[appid]["data"].contains("genres"))
         {
-            for (const auto &g : j_response[appid_str]["data"]["genres"])
+            for (const auto &g : j_response[appid]["data"]["genres"])
             {
                 genres.insert(g["description"]);
             }
@@ -92,7 +90,7 @@ std::unordered_set<std::string> ApiClient::fetchGenres(int appid)
         else {
             {
                 std::cout << j_response.dump(4);
-                logger("[CACHE WRITE EMPTY] " + std::to_string(appid));
+                logger("[CACHE WRITE EMPTY] " + appid);
             }
         }
     } catch (const std::exception &e) {
@@ -135,7 +133,7 @@ void ApiClient::enrichGamesParallel(std::vector<Game> &games, size_t max_concurr
             future.push_back(std::async(std::launch::async, &ApiClient::enrichGameWithGenres, this, std::ref(games[i])));
         }
         catch (const std::exception &e) {
-            logger("Something went wrong! [" + std::to_string(games[i].appid) + " " + std::string(e.what()) + "]");
+            logger("Something went wrong! [" + games[i].appid + " " + std::string(e.what()) + "]");
         }
 
         if (future.size() >= max_concurrent)
@@ -172,9 +170,9 @@ std::string ApiClient::httpGet(const std::string &rUrl) {
     return response;
 }
 
-void ApiClient::saveToCache(int appid, const std::unordered_set<std::string> &genres)
+void ApiClient::saveToCache(std::string appid, const std::unordered_set<std::string> &genres)
 {
-    std::string app_path = cache_path + std::to_string(appid) + ".json";
+    std::string app_path = cache_path + appid + ".json";
     std::ostringstream oss;
     json j_genres;
 
@@ -187,16 +185,16 @@ void ApiClient::saveToCache(int appid, const std::unordered_set<std::string> &ge
     else
     {
         {
-            logger("[CACHE FILE ERROR] " + std::to_string(appid));
+            logger("[CACHE FILE ERROR] " + appid);
         }
     }
 }
 
-std::unordered_set<std::string> ApiClient::loadFromCache(int appid)
+std::unordered_set<std::string> ApiClient::loadFromCache(std::string appid)
 {
     std::unordered_set<std::string> genres;
     json j;
-    std::ifstream file(cache_path + std::to_string(appid) + ".json");
+    std::ifstream file(cache_path + appid + ".json");
     if(file.is_open()) {
         try {
             file >> j;
@@ -204,7 +202,7 @@ std::unordered_set<std::string> ApiClient::loadFromCache(int appid)
             return genres;
         }
         catch (const std::exception &e) {
-            logger("[CACHE FAIL] " + std::to_string(appid) + std::string(e.what()));
+            logger("[CACHE FAIL] " + appid + std::string(e.what()));
             return genres;
         }
     }

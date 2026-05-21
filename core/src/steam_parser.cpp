@@ -10,10 +10,12 @@
  * @param path Path to the file.
  * @return File content as a std::string. Returns empty string if the file cannot be opened.
  */
-std::string SteamLibrary::getContent(const std::string &path) {
+std::string SteamLibrary::getContent(const std::string &path)
+{
     std::ifstream file(path);
+
     if (!file.is_open()) {
-        std::cerr << "Failed to open file: " << path << std::endl;
+        std::cout << "[ERROR] Failed to open: " << path << "\n";
         return "";
     }
 
@@ -31,17 +33,21 @@ std::string SteamLibrary::getContent(const std::string &path) {
  * @param key The key to search for (e.g., "name", "appid", "installdir").
  * @return The value as a string, or empty if the key is not found.
  */
-std::string SteamLibrary::parseManifest(const std::string &content, const std::string &key) {
-    size_t keyPos = content.find("\"" + key + "\"");
+std::string SteamLibrary::parseManifest(const std::string &content, const std::string &key)
+{
+    std::string pattern = "\"" + key + "\"";
+    size_t keyPos = content.find(pattern);
     if (keyPos == std::string::npos) return "";
 
-    size_t start_quote = content.find("\"", keyPos + key.length() + 2);
-    if (start_quote == std::string::npos) return "";
+    size_t valueStart = content.find("\"", keyPos + pattern.length());
+    if (valueStart == std::string::npos) return "";
 
-    size_t end_quote = content.find("\"", start_quote + 1);
-    if (end_quote == std::string::npos) return "";
+    valueStart++; // move past quote
 
-    return content.substr(start_quote + 1, end_quote - start_quote - 1);
+    size_t valueEnd = content.find("\"", valueStart);
+    if (valueEnd == std::string::npos) return "";
+
+    return content.substr(valueStart, valueEnd - valueStart);
 }
 
 /**
@@ -111,22 +117,33 @@ std::vector<std::string> SteamLibrary::getPaths(const std::string &content, cons
 std::vector<AppManifest> SteamLibrary::getManifests(const std::vector<std::string> &library_paths, const std::string &apps) {
     std::vector<AppManifest> manifests;
 
-    for (const auto &path : library_paths) {
+    for (const auto &path : library_paths)
+    {
         std::string fullPath = path + apps;
 
-        if (!std::filesystem::exists(fullPath)) continue;
+        if (!std::filesystem::exists(fullPath))
+            continue;
 
-        for (const auto &it : std::filesystem::directory_iterator(fullPath)) {
+        std::error_code ec;
+        for (const auto &it : std::filesystem::directory_iterator(
+                 fullPath,
+                 std::filesystem::directory_options::skip_permission_denied))
+        {
+            if (!it.is_regular_file())
+                continue;
+
             std::string fname = it.path().filename().string();
-            if (fname.find("appmanifest_") != 0 || it.path().extension() != ".acf") continue;
+
+            if (fname.find("appmanifest_") != 0 || it.path().extension() != ".acf")
+                continue;
 
             AppManifest tmp;
             tmp.library_path = fullPath;
             tmp.path = it.path().string();
+
             manifests.push_back(tmp);
         }
     }
-
     return manifests;
 }
 
@@ -142,19 +159,41 @@ std::vector<AppManifest> SteamLibrary::getManifests(const std::vector<std::strin
 std::vector<Game> SteamLibrary::getGames(const std::vector<AppManifest> &manifests) {
     std::vector<Game> games;
 
+    std::cout << "MANIFEST SIZE. " << manifests.size() << '\n';
     for (const auto &manifest : manifests) {
         Game g;
+
+        g.launcher = Launcher::Steam;
+
         std::string content = getContent(manifest.path);
+
+        if (content.empty()) {
+            std::cout << "[SKIP] empty content: " << manifest.path << "\n";
+            continue;
+        }
 
         g.library_path = manifest.library_path;
         g.manifest_path = manifest.path;
 
         std::string appidStr = parseManifest(content, "appid");
+
+        if (appidStr.empty()) {
+            std::cout << "[SKIP] no appid: " << manifest.path << "\n";
+            continue;
+        }
+
         if (appidStr == "228980") continue;
-        if (!appidStr.empty()) g.appid = std::stoi(appidStr);
+
+        g.appid = appidStr;
 
         g.install_dir = parseManifest(content, "installdir");
         g.name = parseManifest(content, "name");
+
+        // Optional safety
+        if (g.name.empty()) {
+            std::cout << "[SKIP] no name: " << manifest.path << "\n";
+            continue;
+        }
 
         games.push_back(g);
     }
@@ -166,6 +205,10 @@ void SteamLibrary::refresh(){
     std::string content = getContent(library_path);
     std::vector<std::string> escape_paths = getPaths(content, "path");
     std::vector<std::string> library_paths = unescapePaths(escape_paths);
+    for (const auto& p : library_paths)
+    {
+        std::cout << "LIB: [" << p << "] size=" << p.size() << "\n";
+    }
     std::vector<AppManifest> manifests = getManifests(library_paths, R"(\steamapps)");
     std::vector<Game> games = getGames(manifests);
 

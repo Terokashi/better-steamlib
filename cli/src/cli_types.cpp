@@ -1,5 +1,5 @@
+#include <stdexcept>
 #include "cli_types.h"
-#include <iostream>
 
 /**
  * @brief Parses a string into a cli::SortKey enum.
@@ -19,7 +19,6 @@ cli::SortKey cli::parseSortKey(const std::string &input)
     if (input == "appid") return cli::SortKey::AppID;
     if (input == "genre") return cli::SortKey::Genre;
     if (input == "tag") return cli::SortKey::Tag;
-    std::cout << "Using no sorting!\n";
 
     return cli::SortKey::None;
 }
@@ -41,7 +40,6 @@ cli::GroupKey cli::parseGroupKey(const std::string &input)
     if (input == "install") return cli::GroupKey::InstallPath;
     if (input == "genre") return cli::GroupKey::Genre;
     if (input == "tag") return cli::GroupKey::Tag;
-    std::cout << "Using no grouping!\n";
 
     return cli::GroupKey::None;
 }
@@ -53,7 +51,6 @@ cli::FilterKey cli::parseFilterKey(const std::string &input)
     if (input == "library") return cli::FilterKey::LibraryPath;
     if (input == "install") return cli::FilterKey::InstallPath;
     if (input == "tag") return cli::FilterKey::Tag;
-    std::cout << "Using no Filter!\n";
 
     return cli::FilterKey::None;
 }

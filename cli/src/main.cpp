@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <windows.h>
 
+#include "gamemanager.h"
 #include "cli_parser.h"
 #include "steam_parser.h"
 #include "printer.h"
@@ -55,6 +56,8 @@ void initConsole()
  */
 
 int main(int argc, char* argv[]) {
+
+    // Display Help if needed
     if (argc > 1 && std::string(argv[1]) == "--help" | std::string(argv[1]) == "-h") {
         std::cout << R"(
 Better Steam Library CLI Tool
@@ -77,6 +80,7 @@ Options:
     }
     initConsole();
 
+
     // Parse command-line arguments into a Command object
     Command cmd = parseArgs(argc, argv);
     ApiClient client("https://store.steampowered.com/api/appdetails?appids=");
@@ -91,7 +95,6 @@ Options:
     SteamLibrary steamlib;
 
     GameCache cache("cache/games.json");
-
     steamlib.refresh(); // build cache if needed
     std::vector<Game> games = steamlib.loadGames();
     client.enrichGamesParallel(games);
@@ -112,7 +115,7 @@ Options:
             for(Game &g : games)
             {
                 std::cout << "[TAGGING] game: " << g.appid << " " << g.name << std::endl;
-                if (g.appid == std::stoi(t.key)) {
+                if (g.appid == t.key) {
                     found = true;
                     std::copy(t.val.begin(), t.val.end(),
                               std::inserter(g.tags, g.tags.end()));

@@ -12,7 +12,7 @@ class ApiClient {
 public:
     ApiClient(const std::string &baseUrl,
               const std::string &authToken = "",
-              const std::string &cachePath = "/cache/apps/")
+              const std::string &cachePath = "cache/apps/")
         : base_url(baseUrl), auth_token(authToken), cache_path(cachePath){}
 
     /**
@@ -25,7 +25,7 @@ public:
     * @return A vector of genre names. Returns an empty vector if no genres are found
     *         or if the fetch operation fails.
     */
-    std::unordered_set<std::string> fetchGenres(int appid);
+    std::unordered_set<std::string> fetchGenres(std::string appid);
 
     /**
     * @brief Enriches a single Game object with genre information.
@@ -51,13 +51,13 @@ private:
     std::string base_url;
     std::string auth_token;
     std::string cache_path;
-    std::unordered_map<int, std::unordered_set<std::string>> genre_cache;
+    std::unordered_map<std::string, std::unordered_set<std::string>> genre_cache;
 
     std::mutex cout_mutex;
 
     std::string httpGet(const std::string &url);
-    void saveToCache(int appid, const std::unordered_set<std::string> &genres);
-    std::unordered_set<std::string> loadFromCache(int appid);
+    void saveToCache(std::string appid, const std::unordered_set<std::string> &genres);
+    std::unordered_set<std::string> loadFromCache(std::string appid);
 
     void logger(const std::string &log);
 };

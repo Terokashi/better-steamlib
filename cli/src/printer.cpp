@@ -253,7 +253,7 @@ std::vector<Row> buildRows(const std::vector<Game> &games, cli::SortKey &sort_ke
 
         switch(sort_key) {
         case cli::SortKey::AppID:
-            tmp_row.sort_value = sanitize(std::to_string(g.appid));
+            tmp_row.sort_value = sanitize(g.appid);
             break;
         case cli::SortKey::Genre:
             tmp_row.sort_value = sanitize(formatGenres(g.genres));

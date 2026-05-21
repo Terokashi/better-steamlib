@@ -20,7 +20,8 @@ void to_json(json& j, const Game &g)
         {"install_dir", g.install_dir},
         {"library_path", g.library_path},
         {"manifest_path", g.manifest_path},
-        {"tags", g.tags}
+        {"tags", g.tags},
+        {"launcher", g.launcher}
     };
 }
 
@@ -38,6 +39,7 @@ void from_json(const json &j, Game &g)
     j.at("library_path").get_to(g.library_path);
     j.at("manifest_path").get_to(g.manifest_path);
     j.at("tags").get_to(g.tags);
+    j.at("launcher").get_to(g.launcher);
 }
 
 
