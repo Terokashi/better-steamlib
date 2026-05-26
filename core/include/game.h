@@ -3,6 +3,33 @@
 #include <string>
 #include <unordered_set>
 
+enum class GroupKey {
+    None,
+    Genre,
+    Name,
+    LibPath,
+    InstallPath,
+    Tag
+};
+
+enum class SortKey {
+    None,
+    Genre,
+    Name,
+    LibPath,
+    InstallPath,
+    Tag
+};
+
+enum class FilterKey {
+    None,
+    Genre,
+    Name,
+    LibPath,
+    InstallPath,
+    Tag
+};
+
 /**
  * @brief Represents a Steam app manifest file and its containing library.
  */
@@ -30,3 +57,4 @@ struct Game {
     std::unordered_set<std::string> tags;   /**< Custom game tags */
     Launcher launcher;                      /**< Launcher for the game*/
 };
+

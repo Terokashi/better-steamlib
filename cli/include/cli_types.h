@@ -1,43 +1,9 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "game.h"
 
 namespace cli {
-
-    /**
-     * @brief Keys used to sort Game entries.
-     */
-    enum class SortKey {
-        None,           /**< No sorting */
-        Name,           /**< Sort by game name */
-        InstallPath,    /**< Sort by installation path */
-        LibraryPath,    /**< Sort by library path */
-        AppID,          /**< Sort by application ID */
-        Genre,          /**< Sort by Genre */
-        Tag             /**< Sort by tag */
-    };
-
-    /**
-     * @brief Keys used to group Game entries.
-     */
-    enum class GroupKey {
-        None,           /**< No grouping */
-        LibraryPath,    /**< Group by library path */
-        InstallPath,    /**< Group by installation path */
-        Name,           /**< Group by game name */
-        Genre,           /**< Group by Genre */
-        Tag             /**< Group by tag */
-    };
-
-    enum class FilterKey {
-        None,           /**< No Filter */
-        Genre,          /**< Filter by Genre */
-        Name,           /**< Filter by game name */
-        LibraryPath,    /**< Filter by library path */
-        InstallPath,    /**< Filter by Install path */
-        Tag             /**< Filter by tag */
-
-    };
 
     struct Filter {
         FilterKey key;

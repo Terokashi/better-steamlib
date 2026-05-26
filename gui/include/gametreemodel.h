@@ -4,14 +4,9 @@
 
 #include "game.h"
 
-enum class GroupMode{
-    Genre,
-    Path
-};
-
 struct GameTreeNode {
     QString label;
-    Game *game = nullptr;
+    const Game *game = nullptr;
 
     std::vector<std::unique_ptr<GameTreeNode>> children;
     GameTreeNode *parent = nullptr;
@@ -23,7 +18,7 @@ class GameTreeModel : public QAbstractItemModel
 
     std::vector<Game> m_games;
 
-    GroupMode m_mode;
+    GroupKey m_mode = GroupKey::Genre;
     std::unique_ptr<GameTreeNode> m_root;
 public:
     GameTreeModel(const std::vector<Game> &games) : m_games(games){
@@ -31,7 +26,7 @@ public:
     };
 
     void rebuildTree();
-    void setGrouping(GroupMode mode);
+    void setGrouping(GroupKey mode);
 
     QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
     QModelIndex parent(const QModelIndex &index) const override;

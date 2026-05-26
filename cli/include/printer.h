@@ -37,7 +37,7 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
  *         and the value is a vector of Game objects in that group.
  */
 std::unordered_map<std::string, std::vector<Game>>
-groupGames(const std::vector<Game> &games, cli::GroupKey key);
+groupGames(const std::vector<Game> &games, GroupKey key);
 
 /**
  * @brief Sorts a list of games in-place.
@@ -49,9 +49,9 @@ groupGames(const std::vector<Game> &games, cli::GroupKey key);
  * @param key The sorting criterion.
  * @param descending If true, sorts in descending order; otherwise ascending.
  */
-void sortGames(std::vector<Game> &games, cli::SortKey key, bool descending = false);
+void sortGames(std::vector<Game> &games, SortKey key, bool descending = false);
 
-std::vector<Row> buildRows(const std::vector<Game> &games, cli::SortKey &sort_key);
+std::vector<Row> buildRows(const std::vector<Game> &games, SortKey &sort_key);
 
 Widths computeColumnWidths(const std::vector<Row> &rows);
 
@@ -80,8 +80,8 @@ std::string formatGenres(std::unordered_set<std::string> &genres);
  */
 void printGames(
     std::vector<Game> &games,
-    cli::GroupKey group_key,
-    cli::SortKey sort_key,
+    GroupKey group_key,
+    SortKey sort_key,
     std::vector<cli::Filter> Filters,
     bool descending = false
     );

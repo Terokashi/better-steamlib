@@ -22,14 +22,14 @@ struct Command {
      *
      * Defaults to SortKey::Name.
      */
-    cli::SortKey sort_key = cli::SortKey::Name;
+    SortKey sort_key = SortKey::Name;
 
     /**
      * @brief Key used for grouping results.
      *
      * Defaults to GroupKey::LibraryPath.
      */
-    cli::GroupKey group_key = cli::GroupKey::LibraryPath;
+    GroupKey group_key = GroupKey::LibPath;
 
     std::vector<cli::Filter> filters;
     std::vector<cli::Tag> tags;

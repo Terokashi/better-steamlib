@@ -5,25 +5,26 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , gameMan()
-    , mGame(std::make_unique<GameTableModel>(gameMan))
+    , mGame()
     , gameView(this)
 {
     ApiClient client("https://store.steampowered.com/api/appdetails?appids=");
+    gameMan.refresh();
     std::vector<Game> games = gameMan.getAllGames();
-
     client.enrichGamesParallel(games);
-    mGame->setGames(games);
+    mGame = std::make_unique<GameTreeModel>(games);
 
-    gameProxy = std::make_unique<QSortFilterProxyModel>();
-    gameProxy->setSourceModel(mGame.get());
-    gameProxy->sort(0);
+    QModelIndex groupIndex = mGame->index(0, 0, QModelIndex());
+    qDebug() << "group index valid: " << groupIndex.isValid();
+    qDebug() << "group parent: " << mGame->parent(groupIndex);
+    qDebug() << "round trip holds: " << (mGame->parent(groupIndex) == QModelIndex());
+
+    qDebug() << "main amount of games: " << games.size();
+
     // attach model to view
-    gameView.setModel(gameProxy.get());
+    gameView.setModel(mGame.get());
 
     gameView.resizeColumnToContents(0);
-    gameView.resizeColumnToContents(1);
-    gameView.resizeColumnToContents(2);
-
 
     // make the table visible
     setCentralWidget(&gameView);

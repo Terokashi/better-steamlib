@@ -2,11 +2,11 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QTableView>
+#include <QTreeView>
 #include <QSortFilterProxyModel>
 
 #include "gamemanager.h"
-#include "gametablemodel.h"
+#include "gametreemodel.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -25,8 +25,8 @@ public:
 private:
     Ui::MainWindow *ui;
     GameManager gameMan;
-    std::unique_ptr<GameTableModel> mGame;
-    QTableView gameView;
+    std::unique_ptr<GameTreeModel> mGame;
+    QTreeView gameView;
     std::unique_ptr<QSortFilterProxyModel> gameProxy;;
 };
 #endif // MAINWINDOW_H

@@ -13,6 +13,7 @@ add_library(steamcore STATIC
     src/api_client.cpp
     src/gamemanager.cpp
     ${HEADERS}
+
 )
 
 target_include_directories(steamcore PUBLIC

@@ -16,9 +16,9 @@ std::string toLower(const std::string &s) {
 }
 
 // Combine multiple filters of the same type
-std::unordered_map<cli::FilterKey, std::vector<std::string>>
+std::unordered_map<FilterKey, std::vector<std::string>>
 combineFilters(const std::vector<cli::Filter> &filters) {
-    std::unordered_map<cli::FilterKey, std::vector<std::string>> combined;
+    std::unordered_map<FilterKey, std::vector<std::string>> combined;
     for (const auto &f : filters) {
         auto &vec = combined[f.key];
         vec.insert(vec.end(), f.val.begin(), f.val.end());
@@ -39,7 +39,7 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
             bool found_match = false;
 
             switch (key) {
-            case cli::FilterKey::Name:
+            case FilterKey::Name:
                 for (const auto &val : values) {
                     if (toLower(g.name).find(toLower(val)) != std::string::npos) {
                         found_match = true;
@@ -47,7 +47,7 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
                     }
                 }
                 break;
-            case cli::FilterKey::InstallPath:
+            case FilterKey::InstallPath:
                 for (const auto &val : values) {
                     if (g.install_dir.rfind(val, 0) == 0) { // starts-with
                         found_match = true;
@@ -55,7 +55,7 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
                     }
                 }
                 break;
-            case cli::FilterKey::LibraryPath:
+            case FilterKey::LibPath:
                 for (const auto &val : values) {
                     if (g.library_path.rfind(val, 0) == 0) { // starts-with
                         found_match = true;
@@ -63,7 +63,7 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
                     }
                 }
                 break;
-            case cli::FilterKey::Genre:
+            case FilterKey::Genre:
                 for (const auto &val : values) {
                     // works whether g.genres is vector or unordered_set
                     if (std::find(g.genres.begin(), g.genres.end(), val) != g.genres.end()) {
@@ -72,7 +72,7 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
                     }
                 }
                 break;
-            case cli::FilterKey::Tag:
+            case FilterKey::Tag:
                 for (const auto &val : values) {
                     if (std::find(g.tags.begin(), g.tags.end(), val) != g.tags.end()) {
                         found_match = true;
@@ -80,7 +80,7 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
                     }
                 }
                 break;
-            case cli::FilterKey::None:
+            case FilterKey::None:
                 found_match = true;
                 break;
             }
@@ -111,31 +111,31 @@ std::vector<Game> filterGames(const std::vector<Game> &games, const std::vector<
  *         A map where each key is a group and the value is a vector of games in that group.
  */
 std::unordered_map<std::string, std::vector<Game>>
-groupGames(const std::vector<Game> &games, cli::GroupKey key) {
+groupGames(const std::vector<Game> &games, GroupKey key) {
     std::unordered_map<std::string, std::vector<Game>> grouped;
 
     for (const Game &g : games) {
         std::string groupKey;
         switch (key) {
-        case cli::GroupKey::LibraryPath:
+        case GroupKey::LibPath:
             groupKey = g.library_path;
             break;
-        case cli::GroupKey::InstallPath:
+        case GroupKey::InstallPath:
             groupKey = g.install_dir;
             break;
-        case cli::GroupKey::Name:
+        case GroupKey::Name:
             groupKey = g.name;
             break;
-        case cli::GroupKey::Genre:
+        case GroupKey::Genre:
             for (const std::string &genre : g.genres) {
                 grouped[genre].push_back(g);
             }
             continue;
-        case cli::GroupKey::Tag:
+        case GroupKey::Tag:
             for (const std::string &tag : g.tags) {
                 grouped[tag].push_back(g);
             }
-        case cli::GroupKey::None:
+        case GroupKey::None:
             break;
         }
         grouped[groupKey].push_back(g);
@@ -168,31 +168,28 @@ std::string getSortValue(const std::unordered_set<std::string> &list) {
  * @param key Sorting key.
  * @param descending True to sort in descending order, false for ascending.
  */
-void sortGames(std::vector<Game> &games, cli::SortKey key, bool descending) {
+void sortGames(std::vector<Game> &games, SortKey key, bool descending) {
     std::sort(games.begin(), games.end(),
               [&key, descending](const Game &a, const Game &b) {
                   bool result = false;
                   switch (key) {
-                  case cli::SortKey::Name:
+                  case SortKey::Name:
                       result = a.name < b.name;
                       break;
-                  case cli::SortKey::InstallPath:
+                  case SortKey::InstallPath:
                       result = a.install_dir < b.install_dir;
                       break;
-                  case cli::SortKey::LibraryPath:
+                  case SortKey::LibPath:
                       result = a.library_path < b.library_path;
                       break;
-                  case cli::SortKey::AppID:
-                      result = a.appid < b.appid;
-                      break;
-                  case cli::SortKey::Genre: {
+                  case SortKey::Genre: {
                       std::string a_key, b_key;
                       a_key = getSortValue(a.genres);
                       b_key = getSortValue(b.genres);
                       result = a_key < b_key;
                       break;
                   }
-                  case cli::SortKey::Tag: {
+                  case SortKey::Tag: {
                       std::string a_key, b_key;
                       a_key = getSortValue(a.tags);
                       b_key = getSortValue(b.tags);
@@ -200,7 +197,7 @@ void sortGames(std::vector<Game> &games, cli::SortKey key, bool descending) {
                       break;
                   }
 
-                  case cli::SortKey::None:
+                  case SortKey::None:
                       break;
                   }
                   return descending ? !result : result;
@@ -241,7 +238,7 @@ std::string sanitize(std::string to_sanitize)
     return sanitized;
 }
 
-std::vector<Row> buildRows(const std::vector<Game> &games, cli::SortKey &sort_key) {
+std::vector<Row> buildRows(const std::vector<Game> &games, SortKey &sort_key) {
     std::vector<Row> rows;
     // Go through each game
     for (const Game &g : games)
@@ -252,25 +249,22 @@ std::vector<Row> buildRows(const std::vector<Game> &games, cli::SortKey &sort_ke
         tmp_row.path = sanitize(g.install_dir);
 
         switch(sort_key) {
-        case cli::SortKey::AppID:
-            tmp_row.sort_value = sanitize(g.appid);
-            break;
-        case cli::SortKey::Genre:
+        case SortKey::Genre:
             tmp_row.sort_value = sanitize(formatGenres(g.genres));
             break;
-        case cli::SortKey::InstallPath:
+        case SortKey::InstallPath:
             tmp_row.sort_value = sanitize(g.install_dir);
             break;
-        case cli::SortKey::LibraryPath:
+        case SortKey::LibPath:
             tmp_row.sort_value = sanitize(g.library_path);
             break;
-        case cli::SortKey::Name:
+        case SortKey::Name:
             tmp_row.sort_value = sanitize(g.name);
             break;
-        case cli::SortKey::Tag:
+        case SortKey::Tag:
             tmp_row.sort_value = sanitize(formatTags(g.tags));
             break;
-        case cli::SortKey::None:
+        case SortKey::None:
             tmp_row.sort_value = "";
             break;
         }
@@ -386,10 +380,10 @@ void printRows(std::vector<Row> &rows, Widths &widths) {
     std::cout << std::endl;
 }
 
-void printGroupHeader(const std::string &groupName, const cli::GroupKey &group_key , std::size_t game_count) {
+void printGroupHeader(const std::string &groupName, const GroupKey &group_key , std::size_t game_count) {
     std::string out;
     int len;
-    if(group_key == cli::GroupKey::LibraryPath)
+    if(group_key == GroupKey::LibPath)
     {
         out += "(";                 // add opening parenthesis
         out += groupName[0];        // add first character of groupName
@@ -424,8 +418,8 @@ void printGroupHeader(const std::string &groupName, const cli::GroupKey &group_k
  */
 void printGames(
     std::vector<Game> &games,
-    cli::GroupKey group_key,
-    cli::SortKey sort_key,
+    GroupKey group_key,
+    SortKey sort_key,
     std::vector<cli::Filter> Filters,
     bool descending
     ) {
@@ -444,7 +438,7 @@ void printGames(
     }
 
     // If no grouping, just sort and print
-    if (group_key == cli::GroupKey::None) {
+    if (group_key == GroupKey::None) {
         std::vector<Game> sorted_games = filtered_games;
         sortGames(sorted_games, sort_key, descending);
 
